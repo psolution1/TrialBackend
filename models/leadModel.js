@@ -182,11 +182,6 @@ const leadSchema = new mongoose.Schema({
   type: {
     type: String,
   },
-  disposition: {
-    type: String,
-    trim: true,
-    default: 'N/A',
-  }
 });
 
 module.exports = mongoose.model("crm_lead", leadSchema);
