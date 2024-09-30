@@ -10,6 +10,7 @@ const { YearlySaleApi, YearlySaleApiForUser, YearlySaleApiForTeamLeader,
     ,DashboardLeadCountOfUser,AgentWishLeadCount,AgentWishLeadCount1,DashboardLeadCountOfUserByTeamLeader,
     RealestateApi ,MagicbricksApi,AcresApi, bwnotification, Businesswtspmessage,
     IncomeGraphOverviewForTeamLeader,IncomeGraphOverviewForUser,IncomeGraphOverview,GetCalandarDataByUser,GetCalandarDataByTeamLeader
+    ,LeadSourceOverviewApiForGroupLeader,YearlySaleApiForGroupLeader
 } = require('../controllers/genralApiController');
 const {LeadProductServiceOverviewApi}  =require('../controllers/allReportController')
 
@@ -17,11 +18,13 @@ const router=express.Router();
 
 router.route("/YearlySaleApi").get(YearlySaleApi);  //for Admin
 router.route("/YearlySaleApiForTeamLeader").post(YearlySaleApiForTeamLeader);  //for TeamLeader
+router.route("/YearlySaleApiForGroupLeader").post(YearlySaleApiForGroupLeader);  //for TeamLeader
 router.route("/YearlySaleApiForUser").post(YearlySaleApiForUser);  //for User
 
 
 router.route("/lead_source_overview_api").get(LeadSourceOverviewApi); //for Admin
 router.route("/LeadSourceOverviewApiForTeamLeader").post(LeadSourceOverviewApiForTeamLeader); //for Admin
+router.route("/LeadSourceOverviewApiForGroupLeader").post(LeadSourceOverviewApiForGroupLeader); //for Admin
 router.route("/LeadSourceOverviewApiForUser").post(LeadSourceOverviewApiForUser); //for Admin
 
 

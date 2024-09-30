@@ -3,7 +3,8 @@ const express=require('express');
 const { Add_CallLog,getCallLogById,getCallLogByIdAndDate,deleteAllCallLog,
     GetAllUserCallLogById
     ,GetAllUserCallLogByDateWise ,
-    GetCallLogByIdAndDateRange,GetUserCallAccordingToTeamLeader,GetAllUserCallLogByIdTeam} = require('../controllers/callLogController');
+    GetCallLogByIdAndDateRange,GetUserCallAccordingToTeamLeader,
+    GetAllUserCallLogByIdTeam,GetUserCallAccordingToGroupLeader} = require('../controllers/callLogController');
 
 const router=express.Router();
 router.route("/add_call_log").post(Add_CallLog);  
@@ -15,6 +16,7 @@ router.route("/GetAllUserCallLogById").get(GetAllUserCallLogById);
 router.route("/GetAllUserCallLogByIdTeam").post(GetAllUserCallLogByIdTeam);
 
 router.route("/GetUserCallAccordingToTeamLeader").post(GetUserCallAccordingToTeamLeader);
+router.route("/GetUserCallAccordingTogroupLeader").post(GetUserCallAccordingToGroupLeader);
 router.route("/GetAllUserCallLogByDateWise").post(GetAllUserCallLogByDateWise);
 router.route("/GetCallLogByIdAndDateRange").post(GetCallLogByIdAndDateRange);
 
