@@ -16,7 +16,7 @@ const {
 
 const router = express.Router();
 
-// router.route("/add_agent").post(createAgent);
+router.route("/add_agent").post(createAgent);
 
 router.route("/get_all_agent").get(getAllAgent); ///  For get All Agent According to Admin
 router.route("/getAllAgentByTeamLeader").post(getAllAgentByTeamLeader); /// for get Agent According to TL

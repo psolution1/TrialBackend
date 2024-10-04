@@ -7,7 +7,7 @@ const { YearlySaleApi, YearlySaleApiForUser, YearlySaleApiForTeamLeader,
      LeadSourceOverviewApiForUser,GetCalandarData
     ,CompanyDetails,GetCompanyDetails,
     DashboardLeadCount,UnAssignedDashboardLeadCount
-    ,DashboardLeadCountOfUser,AgentWishLeadCount,AgentWishLeadCount1,DashboardLeadCountOfUserByTeamLeader,
+    ,DashboardLeadCountOfUser,AgentWishLeadCount,AgentWishLeadCount1,DashboardLeadCountOfUserByTeamLeader,DashboardLeadCountOfUserByGroupLeader,
     RealestateApi ,MagicbricksApi,AcresApi, bwnotification, Businesswtspmessage,
     IncomeGraphOverviewForTeamLeader,IncomeGraphOverviewForUser,IncomeGraphOverview,GetCalandarDataByUser,GetCalandarDataByTeamLeader
     ,LeadSourceOverviewApiForGroupLeader,YearlySaleApiForGroupLeader
@@ -45,6 +45,7 @@ router.route("/GetCompanyDetails").get(GetCompanyDetails);
 router.route("/DashboardLeadCount").get(DashboardLeadCount);  
 router.route("/DashboardLeadCountOfUser").post(DashboardLeadCountOfUser);  
 router.route("/DashboardLeadCountOfUserByTeamLeader").post(DashboardLeadCountOfUserByTeamLeader);  
+router.route("/DashboardLeadCountOfUserByGroupLeader").post(DashboardLeadCountOfUserByGroupLeader);  
 
 
 router.route("/UnAssignedDashboardLeadCount").get(UnAssignedDashboardLeadCount);

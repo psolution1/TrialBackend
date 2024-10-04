@@ -1490,7 +1490,7 @@ exports.AgentWishLeadCount = catchAsyncErrors(async (req, res, next) => {
 //   }
 // });
 
-exports.AgentWishLeadCount1 = catchAsyncErrors(async (req, res, next) => {
+exports.AgentWishLeadCount2 = catchAsyncErrors(async (req, res, next) => {
   try {
     const { role, user_id } = req.body;
     let agents = [];
@@ -1540,6 +1540,93 @@ exports.AgentWishLeadCount1 = catchAsyncErrors(async (req, res, next) => {
     });
   } catch (error) {
    
+    console.error("Error fetching lead count:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch lead count", error: error.message });
+  }
+});
+
+exports.AgentWishLeadCount1 = catchAsyncErrors(async (req, res, next) => {
+  try {
+    const { role, user_id } = req.body;
+    let agents = [];
+    const array = [];
+    if (role === 'user') {
+      agents = await agent.find({ role: 'user', _id: user_id });
+    } else if (role === 'admin') {
+     
+      const users = await agent.find({ role: 'user' });
+      const teamleaders = await agent.find({ role: 'TeamLeader' });
+      const groupleaders = await agent.find({ role: 'GroupLeader' });
+
+      for (const user of users) {
+        const userLeads = await Lead.find({ assign_to_agent: user._id });
+        array.push({ 'name': user.agent_name, 'role': 'user', 'Value': userLeads.length });
+      }
+
+      // Process TeamLeaders
+      for (const teamleader of teamleaders) {
+        const teamLeaderLeads = await Lead.find({ assign_to_agent: teamleader._id });
+        array.push({ 'name': teamleader.agent_name, 'role': 'TeamLeader', 'Value': teamLeaderLeads.length });
+
+        // Fetch leads assigned to the users under this team leader
+        // const teamleaderAgents = await agent.find({ role: 'user', assigntl: teamleader._id });
+        // for (const agent1 of teamleaderAgents) {
+        //   const agentLeads = await Lead.find({ assign_to_agent: agent1._id });
+        //   array.push({ 'name': agent1.agent_name, 'role': 'user', 'Value': agentLeads.length });
+        // }
+      }
+
+      // Process GroupLeaders
+      for (const groupleader of groupleaders) {
+        const groupLeaderLeads = await Lead.find({ assign_to_agent: groupleader._id });
+        array.push({ 'name': groupleader.agent_name, 'role': 'GroupLeader', 'Value': groupLeaderLeads.length });
+
+        // Fetch team leaders assigned to this group leader
+        // const groupLeaderTeamLeaders = await agent.find({ role: 'TeamLeader', assigntl: groupleader._id });
+        // for (const teamleader of groupLeaderTeamLeaders) {
+        //   const teamLeaderLeads = await Lead.find({ assign_to_agent: teamleader._id });
+        //   array.push({ 'name': teamleader.agent_name, 'role': 'TeamLeader', 'Value': teamLeaderLeads.length });
+
+        //   // Fetch users under this team leader
+        //   const teamleaderAgents = await agent.find({ role: 'user', assigntl: teamleader._id });
+        //   for (const agent1 of teamleaderAgents) {
+        //     const agentLeads = await Lead.find({ assign_to_agent: agent1._id });
+        //     array.push({ 'name': agent1.agent_name, 'role': 'user', 'Value': agentLeads.length });
+        //   }
+        // }
+      }
+    } else if (role === 'TeamLeader') {
+      agents = await agent.find({ role: 'user', assigntl: user_id });
+    } else if (role === 'GroupLeader') {
+      const teamleaders = await agent.find({ role: 'TeamLeader', assigntl: user_id });
+
+      if (teamleaders.length === 0) {
+        console.error("No TeamLeaders found for this GroupLeader.");
+        return res.status(404).json({ success: false, message: "No TeamLeaders found for this GroupLeader." });
+      }
+
+      const teamleaderIds = teamleaders.map(tl => tl._id);
+      agents = await agent.find({ role: 'user', assigntl: { $in: teamleaderIds } });
+
+      for (const teamleader of teamleaders) {
+        const teamLeaderLeads = await Lead.find({ assign_to_agent: teamleader._id });
+        array.push({ 'name': teamleader.agent_name, 'role': 'TeamLeader', 'Value': teamLeaderLeads.length });
+      }
+    }
+
+    // Process agents and their leads
+    for (const agent1 of agents) {
+      const leads = await Lead.find({ assign_to_agent: agent1._id });
+      array.push({ 'name': agent1.agent_name, 'role': 'user', 'Value': leads.length });
+    }
+
+    // Return the response with the lead counts
+    res.status(201).json({
+      success: true,
+      message: "Get Lead Count Successfully",
+      Count: array,
+    });
+  } catch (error) {
     console.error("Error fetching lead count:", error);
     res.status(500).json({ success: false, message: "Failed to fetch lead count", error: error.message });
   }
@@ -1993,7 +2080,168 @@ exports.DashboardLeadCountOfUserByTeamLeader = catchAsyncErrors(async (req, res,
 });
 
 
+exports.DashboardLeadCountOfUserByGroupLeader = catchAsyncErrors(async (req, res, next) => {
 
+  const { user_id } = req.body;
+  // const agents = await agent.find({ assigntl: user_id }).select('_id');
+  // const agentIds = agents.map(agent => agent._id);
+  const [agentsByAssigntl, agentsById] = await Promise.all([
+    agent.find({ assigntl: user_id }),
+    agent.find({ _id: user_id })
+  ]);
+
+  const teamleader = agentsByAssigntl.map((agent)=>agent._id);
+  const tlagents = await agent.find({assigntl:{$in:teamleader}})
+  console.log("tlagents,,,,,,,,,,,,,",tlagents)
+
+  // Merge the results into a single array
+  const allAgents = [...agentsByAssigntl, ...agentsById,...tlagents];
+
+  let array = [];
+  const lead = await Lead.find();
+  const TotalLead = lead.length;
+  const Agent = await agent.find();
+  const TotalAgent = Agent.length;
+  const currentDate = new Date();
+  currentDate.setHours(currentDate.getHours() + 5);
+  currentDate.setMinutes(currentDate.getMinutes() + 30);
+  const formattedDate1 = currentDate.toISOString();
+  const targetDate = new Date(formattedDate1);
+  const targetDateOnly = new Date(targetDate.toISOString().split('T')[0]);
+  const nextDate = new Date(targetDate);
+  nextDate.setDate(nextDate.getDate() + 1); // Get next day from targetDate
+  ///// for Followup Lead count
+
+  const followuplead = await Lead.find({
+    assign_to_agent: { $in: allAgents.map(agent => new ObjectId(agent._id)) },
+    status: {
+      $nin: [
+        new ObjectId("65a904e04473619190494482"),
+        new ObjectId("65a904ed4473619190494484")
+      ],
+    },
+
+  });
+
+
+  ///// for meeting
+  const meetinglead = await Lead.find({
+    assign_to_agent: { $in: allAgents.map(agent => new ObjectId(agent._id)) },
+    status: '65a904164473619190494480',
+    $expr: {
+      $eq: [
+        { $dateToString: { format: "%Y-%m-%d", date: "$followup_date" } }, // Convert followup_date to date string
+        { $dateToString: { format: "%Y-%m-%d", date: targetDateOnly } } // Convert targetDateOnly to date string
+      ]
+    }
+  });
+  const meetingleadNextDay = await Lead.find({
+    assign_to_agent: { $in: allAgents.map(agent => new ObjectId(agent._id)) },
+    status: '65a904164473619190494480',
+    $expr: {
+      $eq: [
+        { $dateToString: { format: "%Y-%m-%d", date: "$followup_date" } },
+        { $dateToString: { format: "%Y-%m-%d", date: nextDate } }
+      ]
+    }
+  });
+
+  const meetinglead_name = await Status.findOne({ _id: '65a904164473619190494480' });
+  ///// for Call Back (Visit)
+  const Visit = await Lead.find({
+    assign_to_agent: { $in: allAgents.map(agent => new ObjectId(agent._id)) },
+    status: '65a903f8447361919049447c',
+    $expr: {
+      $eq: [
+        { $dateToString: { format: "%Y-%m-%d", date: "$followup_date" } }, // Convert followup_date to date string
+        { $dateToString: { format: "%Y-%m-%d", date: targetDateOnly } } // Convert targetDateOnly to date string
+      ]
+    }
+  });
+  const VisitleadNextDay = await Lead.find({
+    assign_to_agent: { $in: allAgents.map(agent => new ObjectId(agent._id)) },
+    status: '65a903f8447361919049447c',
+    $expr: {
+      $eq: [
+        { $dateToString: { format: "%Y-%m-%d", date: "$followup_date" } },
+        { $dateToString: { format: "%Y-%m-%d", date: nextDate } }
+      ]
+    }
+  });
+  const Visit_name = await Status.findOne({ _id: '65a903f8447361919049447c' });
+
+  ///// for Call Back (Re-Visit)
+  const Re_Visit = await Lead.find({
+    assign_to_agent: { $in: allAgents.map(agent => new ObjectId(agent._id)) },
+    status: '65a903ca4473619190494478',
+    $expr: {
+      $eq: [
+        { $dateToString: { format: "%Y-%m-%d", date: "$followup_date" } }, // Convert followup_date to date string
+        { $dateToString: { format: "%Y-%m-%d", date: targetDateOnly } } // Convert targetDateOnly to date string
+      ]
+    }
+  });
+  const Re_VisitleadNextDay = await Lead.find({
+    assign_to_agent: { $in: allAgents.map(agent => new ObjectId(agent._id)) },
+    status: '65a903ca4473619190494478',
+    $expr: {
+      $eq: [
+        { $dateToString: { format: "%Y-%m-%d", date: "$followup_date" } },
+        { $dateToString: { format: "%Y-%m-%d", date: nextDate } }
+      ]
+    }
+  });
+  const Re_Visit_name = await Status.findOne({ _id: '65a903ca4473619190494478' });
+  ///// for Call Back (Re-Visit)
+  const Shedule_Visit = await Lead.find({
+    assign_to_agent: { $in: allAgents.map(agent => new ObjectId(agent._id)) },
+    status: '65a903e9447361919049447a',
+    $expr: {
+      $eq: [
+        { $dateToString: { format: "%Y-%m-%d", date: "$followup_date" } }, // Convert followup_date to date string
+        { $dateToString: { format: "%Y-%m-%d", date: targetDateOnly } } // Convert targetDateOnly to date string
+      ]
+    }
+  });
+  const Shedule_VisitleadNextDay = await Lead.find({
+    assign_to_agent: { $in: allAgents.map(agent => new ObjectId(agent._id)) },
+    status: '65a903e9447361919049447a',
+    $expr: {
+      $eq: [
+        { $dateToString: { format: "%Y-%m-%d", date: "$followup_date" } },
+        { $dateToString: { format: "%Y-%m-%d", date: nextDate } }
+      ]
+    }
+  });
+  const Shedule_Visit_name = await Status.findOne({ _id: '65a903e9447361919049447a' });
+  array.push(
+    { ['name']: 'Followup Lead', ['Value']: followuplead.length },
+    { ['name']: 'Total Agent', ['Value']: allAgents.map(agent => new ObjectId(agent._id))?.length },
+    {
+      ['name']: meetinglead_name?.status_name1, ['Value']: meetinglead.length, ['Value1']: meetingleadNextDay.length,
+      ['id']: '65a904164473619190494480'
+    },
+    {
+      ['name']: Visit_name?.status_name1, ['Value']: Visit.length, ['Value1']: VisitleadNextDay.length
+      , ['id']: '65a903f8447361919049447c'
+    },
+    {
+      ['name']: Re_Visit_name?.status_name1, ['Value']: Re_Visit.length, ['Value1']: Re_VisitleadNextDay.length,
+      ['id']: '65a903ca4473619190494478'
+    },
+    {
+      ['name']: Shedule_Visit_name?.status_name1, ['Value']: Shedule_Visit.length, ['Value1']: Shedule_VisitleadNextDay.length,
+      ['id']: '65a903e9447361919049447a'
+    },
+  );
+  res.status(201).json({
+    success: true,
+    message: "Get Lead Count Successfully",
+    Count: array,
+  });
+
+
+});
 
 
 

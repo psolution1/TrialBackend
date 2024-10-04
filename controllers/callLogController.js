@@ -240,6 +240,63 @@ exports.GetAllUserCallLogById=catchAsyncErrors(async (req, res, next)=>{
   }
 })
 
+exports.GetAllUserCallLogByAdminId = catchAsyncErrors(async (req, res, next) => {
+  try {
+    // Fetching users, team leaders, and group leaders
+    const users = await Agent.find({ role: 'user' });
+    const teamleaders = await Agent.find({ role: 'TeamLeader' });
+    const groupleaders = await Agent.find({ role: 'GroupLeader' });
+
+    let array = [];
+    let username = [];
+    let value = [];
+
+    // Helper function to process call logs for each agent
+    const processCallLogs = async (agent) => {
+      const user_id = agent._id;
+      let TotalTime = 0;
+
+      // Fetch call details for the agent
+      const callDetail = await CallLog.find({ user_id: user_id });
+      const HigstNoOfCall = callDetail?.length || 0;
+
+      // Calculate total duration
+      callDetail.forEach((callDetails) => {
+        TotalTime += parseInt(callDetails?.duration) || 0;
+      });
+
+      const AvrageTime = HigstNoOfCall > 0 ? parseInt(TotalTime / HigstNoOfCall) : 0;
+
+      array.push({
+        ['user_id']: agent._id,
+        ['role']: agent.role,
+        ['username']: agent.agent_name,
+        ['HigstNoOfCall']: HigstNoOfCall,
+        ['TotalTime']: TotalTime,
+        ['AvrageTime']: AvrageTime,
+      });
+      username.push(agent.agent_name);
+      value.push(HigstNoOfCall);
+    };
+
+    // Process call logs for users, team leaders, and group leaders only
+    await Promise.all(users.map(processCallLogs));
+    await Promise.all(teamleaders.map(processCallLogs));
+    await Promise.all(groupleaders.map(processCallLogs));
+
+    // Respond with the collected call log data
+    res.status(200).json({
+      success: true,
+      array,
+      username,
+      value,
+    });
+  } catch (error) {
+    next(error); // Pass the error to the error handler
+  }
+});
+
+
 exports.GetAllUserCallLogByIdTeam=catchAsyncErrors(async (req, res, next)=>{
 
   try {

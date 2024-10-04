@@ -51,35 +51,28 @@ exports.Add_Lead = catchAsyncErrors(async (req, res, next) => {
   });
 });
 ////// housing api
-// exports.Add_housing_Lead = catchAsyncErrors(async (req, res, next) => {
-//   const { contact_no,full_name, email_id,service,disposition} = req.body;
-//   const  recived_from='housing';
-//   const data= {recived_from,...req.body}
-
-//   const lead = await Lead.create(data);
-
-
-
-
-//   res.status(201).json({
-//     success: true,
-//     message: "lead  Has Been Added Successfully",
-//     lead,
-//   });
-// });
 
 exports.Add_housing_Lead = catchAsyncErrors(async (req, res, next) => {
   try {
-    const { contact_no, full_name, email_id, disposition } = req.body;
+    const { contact_no, full_name, email_id, description } = req.body;
 
-    if (!contact_no || !full_name || !email_id || !disposition) {
+    if (!contact_no || !full_name || !email_id || !description) {
       return res.status(400).json({
         success: false,
         message: "All fields are required.",
       });
     }
+
     const recived_from = 'housing';
-    const data = { recived_from, ...req.body };
+    const service = '66a8e474fe247f0debc9a593'; 
+    const lead_source = '66a8e474fe247f0debc9a593';  
+
+    const data = {
+      recived_from,
+      service,  
+      lead_source,  
+      ...req.body,
+    };
 
     const lead = await Lead.create(data);
 
@@ -89,10 +82,10 @@ exports.Add_housing_Lead = catchAsyncErrors(async (req, res, next) => {
       lead,
     });
   } catch (error) {
-
     next(error);
   }
 });
+
 
 exports.getBestAndWorstPerformanceService = catchAsyncErrors(
   async (req, res, next) => {
